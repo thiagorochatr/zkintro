@@ -62,7 +62,7 @@ Assumimos que você é um engenheiro de software com experiência prática em ma
 
 No que diz respeito às _Zero Knowledge Proofs_ (provas de conhecimento zero), assumimos que você já leu meu artigo anterior, [_Uma Introdução Amigável ao Conhecimento Zero_](https://zkintro.com/articles/pt-br/friendly-introduction-to-zero-knowledge). Se você ainda não leu esse artigo, faremos um rápido resumo dos pontos mais importantes aqui. Para uma melhor compreensão, recomendamos ler o artigo acima primeiro. Se você já o leu, pode pular tranquilamente a seção abaixo.
 
-### Recapitulação das ZKPs
+### Recapitulação dos ZKPs
 
 As Provas de Conhecimento Zero (ZKPs) são uma forma relativamente nova de criptografia que tem encontrado aplicações práticas recentemente. Enquanto a criptografia tradicional nos permite realizar tarefas como assinaturas digitais e cifragem, os ZKPs nos permitem provar declarações (statements) arbitrárias de maneira genérica.
 
