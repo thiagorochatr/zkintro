@@ -10,29 +10,29 @@ summary: "Aprenda a escrever e modificar Provas de Conhecimento Zero do 'zero'. 
 translator: 'Thiago Rocha Duarte'
 ---
 
-_A tutorial introduction for the working programmer._
+_Uma introdução tutorial para programadores em atividade._
 
-Do you know why zebras have stripes? One theory is that it is a form of camouflage. When zebras are in a herd together, it makes it harder for the lion to distinguish their prey. Lions have to isolate their prey from the flock to be able to go after it. [^1]
+Você sabe por que as zebras têm listras? Uma teoria é que isso funciona como camuflagem. Quando zebras estão em um rebanho, isso dificulta para o leão distinguir sua presa. Leões precisam isolar sua presa do grupo para poder persegui-la. [^1]
 
-Humans like to hide in a crowd too. One specific example of this is when multiple people act as one under a collective name. This was done for the Federalist Papers which led to the ratification of the United States Constitution. Multiple individuals wrote essays under the single Pseudonym "Publius". [^2] Another example is Bourbaki, a collective pseudonym for a group of French mathematicians in the 1930s. This lead to a complete re-write of large parts of modern mathematics with their focus on rigor and the axiomatic method. [^3]
+Os humanos também gostam de se esconder na multidão. Um exemplo específico disso é quando várias pessoas agem como uma só sob um nome coletivo. Isso aconteceu com os Federalist Papers, que levaram à ratificação da Constituição dos Estados Unidos. Diversos indivíduos escreveram ensaios sob o pseudônimo único "Publius". [^2] Outro exemplo é Bourbaki, um pseudônimo coletivo de um grupo de matemáticos franceses na década de 1930. Isso levou a uma reescrita completa de grandes partes da matemática moderna, com foco no rigor e no método axiomático. [^3]
 
-![Bourbaki Congress](../assets/02_bourbaki.png 'Bourbaki Congress')
+![Congresso Bourbaki](../assets/02_bourbaki.png 'Congresso Bourbaki')
 
-_Bourbaki congress in 1938_
+_Congresso Bourbaki em 1938_
 
-In the digital age, let's say you are in a group chat and want to send a controversial message. You want to prove that you are one of its members, without revealing which one. How can we do this in the digital realm using cryptography? We can use something called _group signatures_.
+Na era digital, imagine que você está em um chat em grupo e quer enviar uma mensagem polêmica. Você quer provar que é um dos membros, sem revelar qual deles. Como podemos fazer isso no mundo digital usando criptografia? Podemos usar algo chamado _assinaturas de grupo_.
 
-Traditionally speaking, group signatures are quite mathematically involved and hard to implement. However, with Zero Knowledge Proofs (ZKPs), this math problem becomes a straightforward programming task. By the end of this article, you'll be able to program group signatures yourself.
+Tradicionalmente, assinaturas de grupo envolvem bastante matemática e são difíceis de implementar. No entanto, com as Zero Knowledge Proofs (ZKPs), esse problema matemático se torna uma tarefa de programação simples. Ao final deste artigo, você será capaz de programar assinaturas de grupo por conta própria.
 
-## Introduction
+## Introdução
 
-This post will show you how to write basic Zero Knowledge Proofs (ZKPs) from scratch.
+Este artigo vai mostrar como escrever Zero Knowledge Proofs básicas do zero.
 
-When learning a new tech stack, we want to get a hang of the edit-build-run cycle as soon as possible. Only then can we start to learn from our own experience.
+Ao aprender uma nova stack, queremos entender o ciclo editar-compilar-executar (_edit-build-run_) o mais rápido possível. Só assim podemos começar a aprender com nossa própria experiência.
 
-We will start by getting you to setup your environment, write a simple program, perform a so-called trusted setup, and then generate and verify proofs as quickly as possible. After that, we'll identify some ways to improve our program, implement these improvements and test them. Along the way, we'll build up a better mental model of the pieces involved in programming ZKPs in practice. At the end of, you'll be familiar with (one way of) writing ZKPs from scratch.
+Vamos começar configurando seu ambiente, escrevendo um programa simples, realizando uma configuração confiável (_trusted setup_) e, em seguida, gerando e verificando provas (_proofs_) o mais rápido possível. Depois disso, vamos identificar algumas formas de melhorar nosso programa, implementar essas melhorias e testá-las. Nesse processo, vamos construir um modelo mental melhor das partes envolvidas na programação de ZKPs na prática. Ao final, você estará familiarizado com (uma forma de) escrever ZKPs do zero.
 
-We will build up step by step to a simple signature scheme where you can prove that you sent a specific message. You'll be able to understand what this piece of code is doing and why:
+Vamos avançar passo a passo até um esquema de assinatura simples em que você pode provar que enviou uma mensagem específica. Você será capaz de entender o que este trecho de código faz e por quê:
 
 ```javascript
 template SignMessage () {
@@ -54,32 +54,32 @@ template SignMessage () {
 component main {public [identity_commitment, message]} = SignMessage();
 ```
 
-You'll also have been given all the tools and techniques necessary to modify this to support the group signature scheme mentioned above.
+Você também terá recebido todas as ferramentas e técnicas necessárias para modificar isso e dar suporte ao esquema de assinatura de grupo mencionado acima.
 
-### Pre-requisites
+### Pré-requisitos
 
-We assume you are a software engineer with working experience in more than one programming language, who has basic familiar with using Unix-style command line interfaces. We also assume you have a passing familiarity with concepts like _digital signatures_, _public-key cryptography_ and _hash functions_. Nonetheless, we'll introduce their relevant properties as they become relevant.
+Assumimos que você é um engenheiro de software com experiência prática em mais de uma linguagem de programação, que tem familiaridade básica com o uso de interfaces de linha de comando (CLI) no estilo Unix. Também assumimos que você possui um conhecimento mínimo de conceitos como _digital signatures_ (assinaturas digitais), _public-key cryptography_ (criptografia de chave pública) e _hash functions_ (funções hash). Mesmo assim, vamos apresentar as propriedades relevantes desses conceitos conforme forem necessárias.
 
-When it comes to _Zero Knowledge Proofs_, we assume you've read my previous post, [_A Friendly Introduction to Zero Knowledge_](https://zkintro.com/articles/friendly-introduction-to-zero-knowledge). If you haven't read this article, we'll quickly recap the most important things here. For better understanding, we recommend reading the above article first. If you have already read it, you can safely skip the below.
+No que diz respeito às _Zero Knowledge Proofs_ (provas de conhecimento zero), assumimos que você já leu meu artigo anterior, [_Uma Introdução Amigável ao Conhecimento Zero_](https://zkintro.com/articles/pt-br/friendly-introduction-to-zero-knowledge). Se você ainda não leu esse artigo, faremos um rápido resumo dos pontos mais importantes aqui. Para uma melhor compreensão, recomendamos ler o artigo acima primeiro. Se você já o leu, pode pular tranquilamente a seção abaixo.
 
-### Recap of ZKPs
+### Recapitulação das ZKPs
 
-Zero Knowledge Proofs (ZKPs) are a fairly new form of cryptography that have seen more practical applications lately. While traditional cryptography allows us to do things like signatures and encryption, ZKPs allows us to prove arbitrary statements in a general-purpose way.
+As Provas de Conhecimento Zero (ZKPs) são uma forma relativamente nova de criptografia que tem encontrado aplicações práticas recentemente. Enquanto a criptografia tradicional nos permite realizar tarefas como assinaturas digitais e cifragem, os ZKPs nos permitem provar declarações (statements) arbitrárias de maneira genérica.
 
-Outside of proving arbitrary statements, ZKPs give us two key properties: privacy and compression. These are also known as zero knowledge and succinctness, respectively. Privacy means we can prove something without revealing anything else. Compression means the proof of an arbitrary statement stays roughly the same size regardless of how complex the computation we are proving is. ZKPs are also general-purpose. Roughly speaking, this is the difference between a calculator, made for a specific task, and a computer, that can compute anything.
+Além de provar declarações arbitrárias, os ZKPs nos oferecem duas propriedades principais: privacidade e compressão. Essas propriedades também são conhecidas como conhecimento zero (_zero knowledge_) e sucintez (_succinctness_), respectivamente. Privacidade significa que podemos provar algo sem revelar nenhuma outra informação. Compressão significa que a prova de uma declaração arbitrária mantém aproximadamente o mesmo tamanho, independentemente da complexidade do cálculo que estamos provando. Os ZKPs também são de uso geral. Simplificando, isso equivale à diferença entre uma calculadora, feita para uma tarefa específica, e um computador, que pode realizar qualquer cálculo.
 
-Two concrete examples of ZKPs:
+Dois exemplos concretos de ZKPs:
 
-- We can take a digital identity card and prove that we are over 18 years old
-  - Without revealing anything else, like your full name or address
-- We can prove that all state transitions have been executed correctly
-  - Such as in a public blockchain, with the resulting proof being very small
+- Podemos usar uma identidade digital e provar que temos mais de 18 anos
+  - Sem revelar mais nada, como seu nome completo ou endereço
+- Podemos provar que todas as transições de estado foram executadas corretamente
+  - Como em uma blockchain pública, com a prova resultante sendo muito pequena
 
-We can program many common types of ZKPs by writing special programs known as circuits. This allows one party, a prover, to create a proof of some statement. Another party, known as a verifier, can then verify this proof. Like a normal program, this program can take input and produce output. For these special programs, we can specify if the input is private or public. If it is private, it means only the prover can see this input. We program circuits by specifying constraints. One example of a constraint is "in a Sudoku puzzle all numbers 1 through 9 must be used exactly once in a row".
+Podemos programar muitos tipos comuns de ZKPs escrevendo programas especiais conhecidos como circuitos (_circuits_). Isso permite que uma parte, o provador (_prover_), crie uma prova (_proof_) de uma declaração (_statement_). Outra parte, conhecida como verificador (_verifier_), pode então verificar essa prova. Assim como um programa normal, esse programa pode receber entradas e produzir saídas. Para esses programas especiais, podemos especificar se a entrada é privada ou pública. Se for privada, significa que apenas o _prover_ pode ver essa entrada. Programamos circuitos especificando restrições (_constraints_). Um exemplo de restrição é: "em um Sudoku, todos os números de 1 a 9 devem ser usados exatamente uma vez em uma linha".
 
-ZKPs are fairly new but they are already used a lot in public blockchains, for example, to allow private payments with fungible money, or to allow more transactions to be processed faster.
+ZKPs são relativamente novos, mas já são bastante utilizados em blockchains públicas, por exemplo, para permitir pagamentos privados com dinheiro fungível ou para permitir que mais transações sejam processadas de forma mais rápida.
 
-More and more applications are being discovered and developed every day. There are also a lot of different flavors of ZKPs, all with their own set of trade-offs, and it is a very active area of research. These different flavors are being developed rapidly, and allow for increased efficiency and other affordances.
+Cada vez mais aplicações estão sendo descobertas e desenvolvidas a cada dia. Existem também várias vertentes diferentes de ZKPs, cada uma com seu próprio conjunto de compensações e trade-offs, e essa é uma área de pesquisa extremamente ativa. Essas diferentes vertentes estão sendo desenvolvidas rapidamente, permitindo maior eficiência e outras possibilidades.
 
 ## Overview
 
