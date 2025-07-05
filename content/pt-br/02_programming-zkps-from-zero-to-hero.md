@@ -81,53 +81,53 @@ ZKPs são relativamente novos, mas já são bastante utilizados em blockchains p
 
 Cada vez mais aplicações estão sendo descobertas e desenvolvidas a cada dia. Existem também várias vertentes diferentes de ZKPs, cada uma com seu próprio conjunto de compensações e trade-offs, e essa é uma área de pesquisa extremamente ativa. Essas diferentes vertentes estão sendo desenvolvidas rapidamente, permitindo maior eficiência e outras possibilidades.
 
-## Overview
+## Visão Geral
 
-We are going to use Circom and Groth16. Circom is a domain-specific language (DSL) for writing ZKP circuits. Groth16 is a common and popular proving system. Roughly speaking, a proving system is just one way that you can program ZKPs. Other DSLs and proving systems also exists.
+Vamos usar Circom e Groth16. Circom é uma linguagem específica de domínio (DSL) para escrever circuitos de ZKP. Groth16 é um sistema de prova (proving system) comum e popular. De forma geral, um sistema de prova é apenas uma das formas de programar ZKPs. Outras DSLs e sistemas de prova também existem.
 
-We'll start by installing some tools and dependencies. After that, we'll proceed in the following rough steps:
+Vamos começar instalando algumas ferramentas e dependências. Depois disso, seguiremos os seguintes passos:
 
-- Write (write circuit)
-- Build (build circuit)
-- Setup (trusted setup)
-- Prove (generate proof)
-- Verify (verify proof)
+- Write (escrever o circuito)
+- Build (compilar o circuito)
+- Setup (configuração confiável)
+- Prove (gerar prova)
+- Verify (verificar prova)
 
-After having gone through this flow once, we'll look at some problems with the current approach. We'll then make several incremental improvements, building up to the signature scheme above. Along the way, we'll explain necessary concepts and syntax.
+Depois de passar por esse fluxo uma vez, vamos analisar alguns problemas com a abordagem atual. Em seguida, faremos várias melhorias incrementais, até chegar ao esquema de assinatura mencionado acima. No caminho, explicaremos os conceitos e a sintaxe necessários.
 
-At the end of each section, we'll also include some simple exercises that will check your understanding. These exercises are recommended. At the very end of the article we'll also include a list of problems. Problems are optional and require a lot more effort.
+Ao final de cada seção, também incluiremos alguns exercícios simples para testar sua compreensão. Esses exercícios são recomendados. No final do artigo também incluiremos uma lista de problemas. Os problemas são opcionais e exigem bem mais esforço.
 
-### Preparation
+### Preparação
 
-First up, we have to install some tools and dependencies. We have prepared a [git repo](https://github.com/oskarth/zkintro-tutorial) that makes it easier for you to get started without getting lost in the weeds with details. If you prefer not to install any software, see the end of this section.
+Primeiro, precisamos instalar algumas ferramentas e dependências. Preparamos um [repositório git](https://github.com/oskarth/zkintro-tutorial) que facilita para você começar sem se perder nos detalhes. Se preferir não instalar nenhum software, veja o final desta seção.
 
-The pre-requisites we require are:
+Os pré-requisitos necessários são:
 
-- `rust` (the programming language)
-- `just` (a modern `make`)
-- `npm` (package manager for JavaScript)
+- `rust` (a linguagem de programação)
+- `just` (um `make` moderno)
+- `npm` (gerenciador de pacotes para JavaScript)
 
-The ZKP tools we will actually use are:
+As ferramentas de ZKP que realmente usaremos são:
 
-- `circom` (for building our special program, or _circuit_)
-- `snarkjs` (for setup, and generating/verifying proofs)
-- `just` tasks (to simplify common operations related to above)
+- `circom` (para construir nosso programa especial, ou _circuito_)
+- `snarkjs` (para configuração e geração/verificação de provas)
+- `just` tasks (para simplificar operações comuns relacionadas às ferramentas acima)
 
-To install the above as well as make building and running things easier you can clone and use the [git repo](https://github.com/oskarth/zkintro-tutorial). This should work on any Unix-like system like MacOS and Linux. If you use Windows we suggest using a Linux VM, Windows Subsystem for Linux (WSL), or similar for development.
+Para instalar o que foi listado acima, além de facilitar a construção e execução, você pode clonar e usar o [repositório git](https://github.com/oskarth/zkintro-tutorial). Isso deve funcionar em qualquer sistema estilo Unix como MacOS ou Linux. Se você usa Windows, sugerimos usar uma VM Linux, Windows Subsystem for Linux (WSL) ou algo similar para o desenvolvimento.
 
 ```shell
-# Clone the repo and run the prepare script
+# Clone o repositório e execute o script de preparação
 git clone git@github.com:oskarth/zkintro-tutorial.git
 cd zkintro-tutorial
 
-# Skim the contents of this file before executing it
+# Dê uma olhada no conteúdo deste arquivo antes de executá-lo
 less ./scripts/prepare.sh
 ./scripts/prepare.sh
 ```
 
-We recommend you skim the contents of `./scripts/prepare.sh` to see what this will install, or if you prefer to install things manually. Once executed you should see `Installation complete` and no errors.
+Recomendamos que você dê uma olhada no conteúdo de `./scripts/prepare.sh` para ver o que será instalado ou caso prefira instalar tudo manualmente. Após a execução, você deve ver a mensagem `Installation complete` e nenhum erro.
 
-If you get stuck, please see the latest official documentation [here](https://docs.circom.io/getting-started/installation/). Once done, you should have the following versions (or higher) installed:
+Se você tiver problemas, consulte a documentação oficial mais recente [aqui](https://docs.circom.io/getting-started/installation/). Ao finalizar, você deve ter as seguintes versões (ou superiores) instaladas:
 
 ```shell
 > circom --version
@@ -137,25 +137,25 @@ circom compiler 2.1.8
 snarkjs@0.7.4
 ```
 
-In the repo there is a `justfile` that defines a set of common commands. These `just` commands aim to simplify common operations on ZKPs, so you can focus on conceptual understanding of the actual steps involved. This makes the process much less error-prone when you are starting out.
+No repositório há um `justfile` que define um conjunto de comandos comuns. Esses comandos `just` têm como objetivo simplificar operações recorrentes com ZKPs, permitindo que você se concentre na compreensão conceitual dos passos envolvidos. Isso torna o processo muito menos propenso a erros quando você está começando.
 
-If at any time you want to see in more detail what commands are being executed, we recommend you look at the `justfile` and the various scripts in the `scripts` folder.
+Se em algum momento você quiser ver em mais detalhes quais comandos estão sendo executados, recomendamos que você consulte o `justfile` e os diversos scripts na pasta `scripts`.
 
-We highly recommend installing the above software for following along the tutorial and building intuition. However, If you do not want to install any software, you can follow along in a limited capacity using an online REPL (Read-Eval-Print Loop) tool such [zkrepl.dev](https://zkrepl.dev). If you do not want to install `just` and prefer to execute all the commands yourself you can do so with a little extra effort by using the accompanying shell scripts.
+Recomendamos fortemente a instalação do software acima para acompanhar o tutorial e desenvolver sua intuição. No entanto, se você não quiser instalar nenhum software, pode acompanhar de forma limitada usando uma ferramenta REPL (Read-Eval-Print Loop) online como [zkrepl.dev](https://zkrepl.dev). Se você preferir não instalar o `just` e executar todos os comandos manualmente, também é possível fazer isso com um pouco mais de esforço usando os scripts shell fornecidos.
 
-## First iteration
+## Primeira iteração
 
-We are now ready to start coding. To build up to the signature scheme mentioned above, we will start with a very simple program, the equivalent of a "Hello World" in other programming languages.
+Agora estamos prontos para começar a programar. Para chegar ao esquema de assinatura mencionado anteriormente, vamos começar com um programa muito simples, o equivalente a um "Hello World" em outras linguagens de programação.
 
-In practical terms, we will write a special program that will help us prove knowledge of two secret numbers whose product is a public number, _without ever revealing the secret numbers themselves_. For example, the public number might be "33" and the secret numbers are "11" and "3". This is an important stepping stone towards digital signatures and will build help intuition for how ZKPs work. If you are familiar with public-key cryptography, you can - very loosely - think of the secret numbers as a "private key" and the public number as a "public key".
+Em termos práticos, vamos escrever um programa especial que nos ajudará a provar o conhecimento de dois números secretos cujo produto é um número público, _sem nunca revelar os números secretos em si_. Por exemplo, o número público pode ser "33" e os números secretos são "11" e "3". Este é um passo importante rumo a assinaturas digitais e ajudará a construir sua intuição sobre como os ZKPs funcionam. Se você tem familiaridade com criptografia de chave pública, pode — de forma bastante simplificada — pensar nos números secretos como uma "chave privada" e no número público como uma "chave pública".
 
-Since this is a different way of programming involving many new concepts, don't worry if things don't make sense at first. You can always keep going, focusing on the code, generating proofs, etc and come back to a specific section later on.
+Como esta é uma forma diferente de programar que envolve muitos conceitos novos, não se preocupe se as coisas não fizerem sentido no início. Você pode seguir em frente, focando no código, gerando provas (proofs) e assim por diante, e depois voltar a uma seção específica mais adiante.
 
-### Write a special program
+### Escrevendo um programa especial
 
-Unlike most other programming, writing these special programs, circuits, look a bit different. What we are interested in is proving a _set of constraints_. [^4] The simplest set of constraints we can prove consists of a single constraint. [^5] What we will constrain is that two numbers multiplied by each other equal a third one.
+Diferente da maioria das outras formas de programação, escrever esses programas especiais, chamados circuitos, é um pouco diferente. O que nos interessa aqui é provar um _conjunto de restrições_ (constraints). [^4] O conjunto mais simples de restrições que podemos provar consiste em uma única restrição. [^5] O que vamos restringir é que dois números multiplicados um pelo outro sejam iguais a um terceiro número.
 
-Go to the `example1` folder in the `zkintro-tutorial` repository above. There's a skeleton program in `example1.circom`. Modify it to look like this:
+Vá até a pasta `example1` no repositório `zkintro-tutorial` mencionado acima. Lá existe um programa esqueleto em `example1.circom`. Modifique-o para que fique assim:
 
 ```javascript
 pragma circom 2.0.0;
@@ -170,17 +170,17 @@ template Multiplier2 () {
 component main = Multiplier2();
 ```
 
-This is our special program, or _circuit_. [^6] Going line by line:
+Este é o nosso programa especial, ou _circuito_. [^6] Vamos linha por linha:
 
-- `pragma circom 2.0.0;`- defines the version of Circom being used
-- `template Multiplier()` - templates are the equivalent to objects in most programming languages, a common form of abstraction
-- `signal input a;` - our first input, `a`; inputs are private by default
-- `signal input b;` - our second input, `b`; also private by default
-- `signal output b;` - our output, `c`; outputs are always public
-- `c <== a * b;` - this does two things: assigns the signal `c` a value _and_ constrains `c` to be equal to the product of `a` and `b`
-- `component main = Multiplier2()` - instantiates our main component
+- `pragma circom 2.0.0;`- define a versão do Circom que está sendo usada
+- `template Multiplier()` - templates são equivalentes a objetos na maioria das linguagens de programação, uma forma comum de abstração
+- `signal input a;` - nossa primeira entrada, `a`; entradas são privadas por padrão
+- `signal input b;` - nossa segunda entrada, `b`; também privada por padrão
+- `signal output c;` - nossa saída, `c`; saídas são sempre públicas
+- `c <== a * b;` - isso faz duas coisas: atribui um valor ao sinal `c` _e_ cria uma restrição para que `c` seja igual ao produto de `a` e `b`
+- `component main = Multiplier2()` - instancia nosso componente principal
 
-The most important line is `c <== a * b;`. This is where we actually declare our constraint. This expression is actually a combination of two: `<--` (assignment) and `===` (equality constraint). [^7] A constraint in Circom can only use operations involving constants, addition or multiplication. It enforces that both sides of the equation must be equal. [^8]
+A linha mais importante é `c <== a * b;`. É aqui que realmente declaramos nossa restrição. Essa expressão é, na verdade, uma combinação de duas operações: `<--` (atribuição) e `===` (restrição de igualdade). [^7] Uma restrição em Circom só pode usar operações envolvendo constantes, adição ou multiplicação. Ela garante que ambos os lados da equação sejam iguais. [^8]
 
 ### On constraints
 
