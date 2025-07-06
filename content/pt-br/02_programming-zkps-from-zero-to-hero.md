@@ -182,29 +182,29 @@ Este é o nosso programa especial, ou _circuito_. [^6] Vamos linha por linha:
 
 A linha mais importante é `c <== a * b;`. É aqui que realmente declaramos nossa restrição. Essa expressão é, na verdade, uma combinação de duas operações: `<--` (atribuição) e `===` (restrição de igualdade). [^7] Uma restrição em Circom só pode usar operações envolvendo constantes, adição ou multiplicação. Ela garante que ambos os lados da equação sejam iguais. [^8]
 
-### On constraints
+### Sobre restrições
 
-How do constraints work? In the context of something like Sudoku, we might say a constraint is "a number between 1 and 9". In the context of Circom however, this is not a single constraint, but instead something we have to express using a set of simpler equality constraints (`===`). [^9]
+Como funcionam as restrições (constraints)? No contexto de algo como Sudoku, podemos dizer que uma restrição é "um número entre 1 e 9". No contexto do Circom, no entanto, isso não é uma única restrição, mas algo que precisamos expressar usando um conjunto de restrições de igualdade mais simples (`===`). [^9]
 
-Why is this the case? This has to do with what is mathematically going on under the hood. Fundamentally, most ZKPs use _arithmetic circuits_ which represents computation over _polynomials_. When dealing with polynomials, you can easily introduce constants, add them together, multiply them and check if they are equal to each other. [^10] Other operations have to be expressed in terms of these fundamental operations. You do not have to understand this in detail in order to write ZKPs, but it can be useful to have some intuitition of what is going on under the hood. [^11]
+Por que isso acontece? Isso tem a ver com o que está acontecendo matematicamente nos bastidores. Fundamentalmente, a maioria dos ZKPs usa _circuitos aritméticos_ que representam computações sobre _polinômios_. Ao trabalhar com polinômios, é fácil introduzir constantes, somá-las, multiplicá-las e verificar se elas são iguais entre si. [^10] Outras operações precisam ser expressas em termos dessas operações fundamentais. Você não precisa entender isso em detalhes para escrever ZKPs, mas pode ser útil ter alguma intuição sobre o que está acontecendo por trás dos panos. [^11]
 
-We can visualize the circuit as follows:
+Podemos visualizar o circuito da seguinte forma:
 
-![example1 circuit](../assets/02_example1_circuit.png 'example1 circuit')
+![circuito exemplo1](../assets/02_example1_circuit.png 'circuito exemplo1')
 
-### Building our circuit
+### Construindo nosso circuito
 
-For your reference, the final file can be found in `example1-solution.circom`. For more details on the syntax, see the [official documentation](https://docs.circom.io/circom-language/signals/).
+Para sua referência, o arquivo final pode ser encontrado em `example1-solution.circom`. Para mais detalhes sobre a sintaxe, consulte a [documentação oficial](https://docs.circom.io/circom-language/signals/).
 
-We can compile our circuit by running:
+Podemos compilar nosso circuito executando:
 
 ```shell
 just build example1
 ```
 
-![example1 build](../assets/02_example1_build.png 'example1 build')
+![compilação do example1](../assets/02_example1_build.png 'compilação do example1')
 
-This is a thin wrapper for calling `circom` to create a `example1.r1cs` and `example1.wasm` file. You should see something like:
+Este é um pequeno encapsulamento para chamar o `circom` e criar os arquivos `example1.r1cs` e `example1.wasm`. Você deve ver algo assim:
 
 ```shell
 template instances: 1
@@ -219,49 +219,51 @@ Written successfully: example/target/example1.r1cs
 Written successfully: example/target/example1_js/example1.wasm
 ```
 
-In this case, we have the following:
+Neste caso, temos o seguinte:
 
-- two private inputs, `a` and `b`
-- one public output, `c`
-- one (non-linear) constraint, `c <== a * b`
+- duas entradas privadas, `a` e `b`
+- uma saída pública, `c`
+- uma restrição não linear, `c <== a * b`
 
-We will ignore other parts of the output above for now. [^12] Now we have two files: `example1.r1cs` and `example1.wasm`.
+Vamos ignorar as outras partes da saída por enquanto. [^12] Agora temos dois arquivos: `example1.r1cs` e `example1.wasm`.
 
-`r1cs` stands for _Rank 1 Constraint System_. This file contains our circuit in binary form. and corresponds to how we define our constraints mathematically. [^13]
+`r1cs` significa _Rank 1 Constraint System_. Este arquivo contém nosso circuito em forma binária e corresponde à forma como definimos nossas restrições matematicamente. [^13]
 
-The `.wasm` file contains WebAssembly, which is what we need to generate our _witness_. The witness is how we specify the inputs that we want to keep private while still using them to create a proof.
+O arquivo `.wasm` contém WebAssembly, que é o que precisamos para gerar nossa _witness_ (testemunha). A testemunha é como especificamos as entradas que queremos manter privadas enquanto ainda as utilizamos para criar uma prova.
 
-We are not quite ready to make proofs yet though. First we need to perform a _setup_ to get our prover and verification key.
+Ainda não estamos prontos para criar provas. Primeiro precisamos realizar uma _setup_ (configuração) para obter nossa chave de prova (_prover key_) e chave de verificação (_verification key_).
 
-Don't worry if it all doesn't make sense yet. It is a new way of doing things and it takes a while to get used to.
+Não se preocupe se tudo ainda não fizer sentido. É uma nova forma de fazer as coisas e leva um tempo para se acostumar.
 
-### Trusted setup
+### Configuração confiável (Trusted setup)
 
-With the artifacts we generated above, we can perform a _trusted setup_.
+Com os artefatos que geramos acima, podemos realizar uma _configuração confiável_.
 
-A trusted setup is something we run once as a pre-processing step. This generates what is called a _Common Reference String_ (CRS), which consists of a _proving key_ and a _verification key_. These keys can then be used every time we want to generate and verify proofs, respectively.
+Uma configuração confiável é algo que executamos uma vez como uma etapa de pré-processamento. Ela gera o que é chamado de _Common Reference String_ (CRS), que consiste em uma _proving key_ (chave de prova) e uma _verification key_ (chave de verificação). Essas chaves podem ser usadas sempre que quisermos gerar e verificar provas, respectivamente.
 
-![Trusted setup](../assets/02_example1_setup1.png 'Trusted setup')
+![Configuração confiável](../assets/02_example1_setup1.png 'Configuração confiável')
 
-Why do we need these keys and who should have access to them? The prover key embeds all the information necessary to be able to generate a proof in a zero-knowledge preserving fashion for that specific circuit. Similarly, the verifier key embeds all the information necessary to verify that the proof is indeed correct. These aren't private keys, but instead information that can and should be publicly distributed. Any party that needs to generate or verify a proof should have access to them. [^14]
+Por que precisamos dessas chaves e quem deve ter acesso a elas? A _chave de prova_ incorpora todas as informações necessárias para gerar uma prova preservando o conhecimento zero para aquele circuito específico. Da mesma forma, a _chave de verificação_ incorpora todas as informações necessárias para verificar que a prova está realmente correta. Essas não são chaves privadas, mas sim informações que podem e devem ser distribuídas publicamente. Qualquer parte que precise gerar ou verificar uma prova deve ter acesso a elas. [^14]
 
-Why do we call it a trusted setup? Performing a setup is a process that involves multiple participants and it is sometimes called a _ceremony_. [^15] All participants cooperate to create a cryptographic "secret", and this is the basis of how the proving and verification keys are constructed. If this process is manipulated, cryptographically it may be possible to create false proofs or falsely claim invalid proofs as verified. Hence, there's an assumption of trust that least some participants are honest in the setup process, giving rise to the term "trusted setup".
+Por que chamamos isso de configuração confiável (_trusted setup_)? Realizar uma setup é um processo que envolve múltiplos participantes e às vezes é chamado de _cerimônia_ (ceremony). [^15] Todos os participantes cooperam para criar um "segredo" criptográfico, e isso é a base de como as chaves de prova e verificação são construídas. Se esse processo for manipulado, pode ser possível criar provas falsas ou validar provas inválidas. Por isso há uma suposição de confiança de que pelo menos alguns participantes são honestos no processo, originando o termo "configuração confiável".
 
-As a starting point, we are going to run the trusted setup ourselves. Run the following:
+Como ponto de partida, vamos rodar nós mesmos a configuração confiável. Execute o seguinte:
 
-`just trusted_setup example1`
+```shell
+just trusted_setup example1
+```
 
-![example1 trusted setup](../assets/02_example1_setup2.png 'example1 trusted setup')
+![configuração confiável do example1](../assets/02_example1_setup2.png 'configuração confiável do example1')
 
-You'll be asked to supply some random text or entropy twice. [^16] Once completed you should see "Trusted setup completed." and the location of the keys. The file ending in `.zkey` is our proving key. While going into the details of trusted setups is outside of the scope of this article, there are a few things that are useful to be aware of.
+Você será solicitado a fornecer algum texto aleatório ou entropia duas vezes. [^16] Após a conclusão, você verá "Trusted setup completed." e o local das chaves. O arquivo com final `.zkey` é nossa chave de prova. Embora entrar nos detalhes das configurações confiáveis esteja fora do escopo deste artigo, há algumas coisas úteis para se ter em mente.
 
-First, what is the problem with the above approach? Since we have just one participant, everyone else who is using the cryptographic key material from that setup is trusting that individual and their computer environment. This wouldn't work in a production scenarios where we'd want to maximize the number of participants to make the setup more trustworthy. If we have 100 people who participate, because of how this cryptographic secret is constructed, it is enough if one single individual is honest. [^17]
+Primeiro, qual o problema da abordagem acima? Como temos apenas um participante, todos os demais que estão usando o material criptográfico daquela configuração estão confiando naquela pessoa e no ambiente do computador dela. Isso não funcionaria em cenários de produção onde queremos maximizar o número de participantes para tornar a configuração mais confiável. Se tivermos 100 pessoas participando, devido à forma como o segredo criptográfico é construído, basta que uma única pessoa seja honesta. [^17]
 
-It is also worth knowing that different ZKP systems have different properties in terms of security, performance and affordances. While all ZKP systems require some form of setup, not all of them require a trusted setup. Of those that do, some differ in their requirements.
+Também vale saber que diferentes sistemas de ZKP possuem propriedades distintas em termos de segurança, desempenho e características. Embora todos os sistemas de ZKP exijam algum tipo de configuração, nem todos exigem uma configuração confiável. E, entre os que exigem, alguns diferem em suas exigências.
 
-With Circom we are using the _Groth16 proof system_ which does requires a trusted setup. Specifically, the setup is split into two phases: phase 1 and phase 2. Phase 1 is independent of a circuit and can be used by any ZKP program up to a certain size, whereas phase 2 is _circuit-specific_. When we ran the above command, we performed both phases.
+Com o Circom estamos usando o _sistema de prova Groth16_, que realmente exige uma configuração confiável. Especificamente, a configuração é dividida em duas fases: fase 1 e fase 2. A fase 1 é independente do circuito e pode ser usada por qualquer programa de ZKP até um certo tamanho, enquanto a fase 2 é _específica do circuito_. Ao executar o comando acima, realizamos ambas as fases.
 
-You might be wondering, why would you use a trusted setup at all if you can avoid it? A lot of people agree with this view. However, there are still good reasons people use these systems - such as more mature tooling and ecosystem, as well as cheap verification costs. Cheap verification costs is something that is traditionally very important, especially when we are verifying proofs on a public blockchain like Ethereum. Depending on your use case, your choice will likely differ. In a different article we'll look more into trusted setups and their trade-offs, as well as different proof systems.
+Você pode estar se perguntando: por que usar uma configuração confiável se é possível evitá-la? Muitas pessoas concordam com essa visão. No entanto, ainda existem boas razões para que esses sistemas sejam utilizados — como ferramentas e ecossistemas mais maduros, além de custos baixos de verificação. Custos baixos de verificação são tradicionalmente algo muito importante, especialmente quando estamos verificando provas em uma blockchain pública como o Ethereum. Dependendo do seu caso de uso, sua escolha provavelmente será diferente. Em um artigo futuro vamos explorar mais sobre configurações confiáveis e seus trade-offs, além de diferentes sistemas de prova.
 
 ### Generate proof
 
